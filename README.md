@@ -26,6 +26,7 @@ All of the information collected by Snowball will be sent into the log file for 
 Snowball has some requirements before it will run. First off, make sure you have [Python 3.3][1] or newer. Then, install [psutil][2] 1.2.1. It's recommended that you install psutil using [pip][3] to ensure that psutil will be installed correctly.
 
 **Ubuntu:**
+
 To install Python 3.3, run
 
     sudo apt-get install python3

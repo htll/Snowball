@@ -1,42 +1,65 @@
-# Snowball 2.0a
+#!/usr/bin/python3.3
+# Snowball 2.0.1a
 # Created by arch-angel
 # Let Them Find Us / LTFU / lethemfind.us
 
 '''
-Dependency information:
-Python 3.3
-psutil 1.2.1
+TODO: allow snowball to be run from the command line
+e.g. python3 snowball.py --cpu > log.txt writes only cpu info to log file
+Running python3 snowball.py without options should produce usage info and fail
+to run.
+
+Possible options:
+--all (overrides all other options and provides full output)
+--gen
+--py
+--env
+--cpu
+--net
+--mem
+--proc
+--disk
 '''
 
-# First, check to see if we have psutil
-import sys
-try:
-    import psutil
-except ImportError:
-    # Exit if we don't have psutil
-    print("psutil not installed. Exiting.")
-    sys.exit(1)
+__version__ = "2.0.1a"
 
-# Import modules in the order they appear
-import datetime, platform
+import psutil
+
+import datetime
+import platform
 from collections import OrderedDict
+import time
+
+
+class InvalidMemType(Exception):
+    '''Raised when memtype is not "swap" or "virtual".'''
+    
+    def __init__(self, mem):
+        self.mem = mem
+    
+    def __str__(self):
+        return repr(self.mem)
+
 
 def print_start():
     '''Prints basic info about Snowball.'''
-    ver = "2.0a"
-    print("Snowball " + ver + " by arch-angel")
-    print("Generated " + str(datetime.datetime.now()))
+    
+    print("Snowball " + __version__ + " by arch-angel")
+    print("Generated " + datetime.datetime.now().strftime("%c"))
 
-# Data collection functions
+
 def get_env_info():
     '''Gets general information about the computer.'''
+    
     infodict = OrderedDict()
+    
     infodict["Name"] = platform.node()
     infodict["System"] = platform.system()
-    infodict["System alias"] = " ".join(platform.system_alias(platform.system(), platform.release(), platform.version()))
-    infodict["Platform"] = platform.platform(True, False)
+    infodict["System alias"] = " ".join(platform.system_alias(
+            platform.system(), platform.release(), platform.version()))
+    infodict["Platform"] = platform.platform()
     
-    if infodict["System"] == "Linux":
+    if infodict["System"] == "Linux": # System-specific information
         infodict["Distribution"] = " ".join(platform.dist())
     elif infodict["System"] == "Windows":
         infodict["OS"] = " ".join(platform.win32_ver())
@@ -45,73 +68,86 @@ def get_env_info():
         macver = " ".join(platform.mac_ver())
         macver[1] = verinfo
         infodict["OS"] = " ".join(macver)
-        
-    # TODO: Add users
+    
+    infodict["Boot time"] = datetime.datetime.fromtimestamp(
+            psutil.get_boot_time()).strftime("%c")
+    infodict["Uptime"] = str(datetime.datetime.fromtimestamp(
+            time.time() - psutil.get_boot_time()).strftime("%d:%H:%M:%S:%f"))
+    
+    for user in psutil.get_users():
+        infodict["User '" + user.name + "' terminal"] = user.terminal
+        infodict["User '" + user.name + "' host"] = user.host
+        infodict["User '" + user.name + "' started"] = str(
+                datetime.datetime.fromtimestamp(user.started).strftime("%c"))
     
     return infodict
 
+
 def get_python_info():
     '''Gets information related to Python.'''
+    
     infodict = OrderedDict()
+    
     infodict["Implementation"] = platform.python_implementation()
     infodict["Version"] = platform.python_version()
     infodict["Build"] = " ".join(platform.python_build())
     infodict["Compiler"] = platform.python_compiler()
     
+    if platform.system() == "Linux":
+        infodict["libc version"] = " ".join(platform.libc_ver())
+    
     return infodict
+
 
 def get_cpu_info():
     '''Gets detailed CPU resource usage and statistics.'''
-    infodict = OrderedDict()
     
-    # Add constant (fixed) information
+    infodict = OrderedDict()
+   
     infodict["Processor"] = platform.processor()
     infodict["Architecture"] = platform.machine()
     infodict["Cores"] = str(psutil.NUM_CPUS)
     
-    cores = int(infodict["Cores"]) # In variable for faster referencing
-    percent = psutil.cpu_times_percent(1, True) # In variable for constant data
+    cores = int(infodict["Cores"])
+    percent = psutil.cpu_times_percent(interval=0.1, percpu=True)
+    
     if cores > 1:
         for core in range(0, cores):
-            real_core = core + 1 # In variable for faster referencing
+            real_core = core + 1
             for time, _ in enumerate(percent[core - 1]):
-                infodict["Core " + str(real_core) + " " + \
-                percent[core]._fields[time] + \
-                " usage"] = str(percent[core][time]) + "%"
-            # Total core usage
-            infodict["Core " + str(real_core) + " total usage"] \
-            = str(round(100.0 - getattr(percent[core], "idle"), 1)) + "%"
-    
-    # For every value in 'percent', get those values in each core,
-    # add them together, divide by the number of cores, then store it
-    
-    # 1. Set up the ordered dictionary with the same fields as 'percent'
+                infodict["Core " + str(real_core) + " " + 
+                    percent[core]._fields[time] + " usage"] = str(
+                    percent[core][time]) + "%"
+            
+            infodict["Core " + str(real_core) + " total usage"] = str(
+                    round(100.0 - getattr(percent[core], "idle"), 1)) + "%"
+   
     timedict = OrderedDict()
+    
     for name in percent[0]._fields:
         timedict[name] = 0.0
-    
-    # 2. Add the values of each field from each core together
+        
     for i, time in enumerate(percent[0]._fields):
         for core in range(0, cores):
             timedict[time] += percent[core][i]
-    
-    # 3. Divide each value by the number of cores
+   
     for time in timedict:
         timedict[time] = round(timedict[time] / cores, 1)
         infodict["Total " + time + " usage"] = str(timedict[time]) + "%"
-    
-    # Total CPU usage
+   
     for core in range(0, cores):
         infodict["Total usage"] = 0.0
         infodict["Total usage"] += 100.0 - getattr(percent[core], "idle")
     
-    infodict["Total usage"] = str(round(infodict["Total usage"] \
-    / cores, 1)) + "%"
+    infodict["Total usage"] = str(round(infodict["Total usage"]
+            / cores, 1)) + "%"
     
     return infodict
 
+
 def get_net_info():
     '''Gets information about network connections.'''
+    
     infodict = OrderedDict()
     netstats = OrderedDict(sorted(psutil.net_io_counters(True).items()))
     
@@ -121,79 +157,19 @@ def get_net_info():
     
     return infodict
 
-def get_process_info(info):
-    '''Gets detailed information about currently running processes.'''
-    infodict = OrderedDict()
-    
-    # TODO: Clean this up
-    
-    '''
-    
-    # This must be stored in a variable to prevent "No Such Process" exceptions
-    proclist = psutil.get_process_list()
-    
-    for process in proclist:
-        
-        getprocess = psutil.Process(process.pid)
-        
-        infodict[str(process.pid)] = getprocess.name + ", " + \
-        getprocess.username + ", " + \
-        getprocess.status + ", " + \
-        str(getprocess.ppid) + ", " + \
-        str(getprocess.get_children()) + ", " + \
-        str(getprocess.cmdline) + ", " + \
-        str(getprocess.get_threads()) + ", " + \
-        str(getprocess.get_cpu_affinity()) + ", " + \
-        str(getprocess.get_num_ctx_switches()) + ", "
-        
-        '\''
-        if platform.system() == "Linux":
-            infodict[str(process.pid)] += str(getprocess.get_num_fds())
-        else:
-            infodict[str(process.pid)] += "unavailable"
-            
-        infodict[str(process.pid)] += ", "
-        
-        if platform.system() == "Windows":
-            infodict[str(process.pid)] += str(getprocess.get_num_handles())
-        else:
-            infodict[str(process.pid)] += "unavailable"
-            
-        #infodict[str(process.pid)] += ", " + \
-        
-        try:
-            infodict[str(process.pid)] = str(getprocess.get_open_files()) + ", "
-        except psutil._error.AccessDenied:
-            infodict[str(process.pid)] = "denied, "
-        
-        try:
-            infodict[str(process.pid)] = str(getprocess.get_connections()) + ", "
-        except psutil._error.AccessDenied:
-            infodict[str(process.pid)] = "denied, "
-        
-        '\''infodict[str(process.pid)] += ", " + "threads: <"
-        for threadnum, thread in enumerate(getprocess.get_threads()):
-            if threadnum :
-                infodict[str(process.pid)] += ", "
-            infodict[str(process.pid)] += str(threadnum)
-        infodict[str(process.pid)] += ">"
-        '''
-    return infodict
-    
-    '\''
 
-def get_memory_info(memtype):
-    '''Gets memory info. Memtype = str, can be "swap" or "virtual"'''
-    infodict = OrderedDict()
+def get_memory_info(memtype=""):
+    '''Gets memory info. Memtype can be "swap" or "virtual".'''
     
-    if memtype == "swap" or "virtual":
+    infodict = OrderedDict()
+
+    if memtype == "swap" or memtype == "virtual":
         if memtype == "virtual":
             mem = psutil.virtual_memory()
         else:
             mem = psutil.swap_memory()
     else:
-        print("Internal error: invalid memory type.")
-        sys.exit(2)
+        raise InvalidMemType(memtype)
   	
     for item, val in enumerate(mem):
         infodict[mem._fields[item]] = str(val)
@@ -207,42 +183,59 @@ def get_memory_info(memtype):
     
     return infodict
 
-# Data printing functions
-def print_info(info):
-    '''Prints friendly output from get_*_info(). info = dict or OrderedDict'''
+
+def get_disk_info():
+    '''Gets disk information.'''
     
-    for key, value in info.items():
-        # Change blank values to "unknown"
-        if value == "" or None:
-            value = "unknown"
-        print(key + ": " + value)
+    infodict = OrderedDict()
+    
+    for partition in psutil.disk_partitions(True):
+        if not partition.device:
+            continue
+        
+        infodict[partition.device + " mount point"] = partition.mountpoint
+        infodict[partition.device + " file system"] = partition.fstype
+        infodict[partition.device + " options"] = partition.opts
+        infodict[partition.device + " size"] = str(
+                psutil.disk_usage(partition.mountpoint).total) + " bytes"
+        infodict[partition.device + " free"] = str(
+                psutil.disk_usage(partition.mountpoint).free) + " bytes"
+        infodict[partition.device + " used"] = str(
+                psutil.disk_usage(partition.mountpoint).used) + " bytes"
+        infodict[partition.device + " percent used"] = str(
+                psutil.disk_usage(partition.mountpoint).percent) + "%"
+    
+    return infodict
 
-# Print data here
-# Note: print in order of volitility
+
+def print_info(info=dict()):
+    '''Prints friendly output from get_*_info().'''
+    
+    for k, v in info.items():
+        if not v and v != 0:
+            v = "unknown"
+        
+        print(k + ": " + v)
+
+
+# Print in order of volatility
 print_start()
-print("")
-print("General information:")
+print("\nGeneral information:")
 print_info(get_env_info())
-print("")
-print("Python information:")
+print("\nPython information:")
 print_info(get_python_info())
-print("")
-print("CPU information:")
+print("\nCPU information:")
 print_info(get_cpu_info())
-print("")
-print("Network information:")
+print("\nNetwork information:")
 print_info(get_net_info())
-
-# TODO: Clean this up
-'''
-print("Process list:")
-print("PID, name, owner, status, parent pid, children, invoked as, threads, affinity, ctx switches, handles, files open, connections open, memory, memory maps")
-print_info(get_process_info())
-'''
-print("")
-print("Memory statistics:")
+print("\nProcess information:")
+print(psutil.test())
+print("\nMemory statistics:")
 print("Virtual memory:")
 print_info(get_memory_info("virtual"))
-print("")
-print("Swap/page memory:")
+print("\nSwap/page memory:")
 print_info(get_memory_info("swap"))
+print("\nDisk information:")
+print_info(get_disk_info())
+print("\nWrite completed "
+        + datetime.datetime.now().strftime("%c"))

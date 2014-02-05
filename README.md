@@ -1,32 +1,43 @@
 # Snowball #
 *A lightweight, cross-platform data mining utility*
 
-Snowball makes it easy to quickly get information about hardware usage statistics and process information.
+Snowball makes it easy to quickly get information about hardware usage 
+statistics and process information.
 
 ----------
 
 ### Using Snowball ###
 
-> **Note:** Code examples are written for Ubuntu Linux and may not work with other operating systems
+> **Note:** Code examples are written for Ubuntu Linux and may not work with 
+other operating systems
 
-Before beginning, make sure all dependencies are met, or Snowball will not run. See the *Dependency Information* section for more information. To run Snowball, simply run
+Before beginning, make sure all dependencies are met, or Snowball will not run. 
+See the *Dependency Information* section for more information. To run Snowball, 
+simply run
 
-    python3 snowball.py
+    ./snowball.py
 
-in Snowball's directory, and Snowball will write its output to the console. Information is collected in the order of volatility, which means that the information most likely to change is collected first, and more constant information is collected last. In some cases, because of the long length of output, not all information can be displayed to the console. It's possible to get around this simply by writing Snowball's output to a log file:
+in Snowball's directory, and Snowball will write its output to the console. 
+Information is collected in the order of volatility, which means that the 
+information most likely to change is collected first, and more constant 
+information is collected last. It's also possible to write Snowball's output to 
+a log file:
 
-    python3 snowball.py > log-name.txt
+    ./snowball.py > log-name.txt
     
-All of the information collected by Snowball will be sent into the log file for easy access later.
+All of the information collected by Snowball will be sent into the log file for 
+easy access later.
 
 ----------
 
 ### Dependency Information ###
 
-Snowball has some requirements before it will run. First off, make sure you have [Python 3.3][1] or newer. Then, install [psutil][2] 1.2.1. It's recommended that you install psutil using [pip][3] to ensure that psutil will be installed correctly.
+Snowball has some requirements before it will run. First off, make sure you 
+have [Python 3.3][1] or newer. Then, install [psutil][2] 1.2.1. It's recommended 
+that you install psutil using [pip][3] to ensure that psutil will be installed 
+correctly.
 
 **Ubuntu:**
-
 To install Python 3.3, run
 
     sudo apt-get install python3
@@ -41,19 +52,39 @@ After pip is installed, run
     
 **Windows:**
 
-To install Python 3.3, download and install it from the link above. Then, download and run [pip-Win][4]. Follow the instructions on the page provided.
+To install Python 3.3, download and install it from the link above. Then, 
+download and run [pip-Win][4]. Follow the instructions on the page provided.
 
-> **Note:** psutil requires a C compiler to install properly. Install [Visual C++ 2010 Express][5]; if you're on a 64-bit system, follow the instructions in [this article][6]. If you don't want to do this, you can install an [unsupported precompiled binary][7], but this is not recommended.
-
+> **Note:** psutil requires a C compiler to install properly. Install [Visual 
+C++ 2010 Express][5]; if you're on a 64-bit system, follow the instructions in 
+[this article][6]. If you don't want to do this, you can install an 
+[unsupported 
+precompiled binary][7], but this is not recommended.
 
 ----------
 
 ### Notes & Changelog ###
 
-Snowball is still in its initial alpha stage of testing and release, so many features may not work and there may be bugs present in the code. Snowball may also change drastically from commit to commit.
+Snowball is still in its initial alpha stage of testing and release, so many 
+features may not work and there may be bugs present in the code. Snowball may 
+also change drastically from commit to commit.
 
 **Changelog:**
 
+    2.0.1a
+    -Newlines now use \n instead of print("")
+    -Process information is now better formatted
+    -Added disk information
+    -Added boot time to general information
+    -Added uptime to general information
+    -Added user information to general infoormation
+    -Added libc version on Linux systems to Python Information
+    -Collection of CPU times is now 10x faster
+    -Formatted date and time per locale
+    -Invalid memory type now raises InvalidMemType(memtype)
+    -Added shebang
+    -Added write start and end times
+    
     2.0a
     -Initial commit
 

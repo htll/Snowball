@@ -63,30 +63,11 @@ precompiled binary][7], but this is not recommended.
 
 ----------
 
-### Notes & Changelog ###
+### Notes ###
 
 Snowball is still in its initial alpha stage of testing and release, so many 
 features may not work and there may be bugs present in the code. Snowball may 
 also change drastically from commit to commit.
-
-**Changelog:**
-
-    2.0.1a
-    -Newlines now use \n instead of print("")
-    -Process information is now better formatted
-    -Added disk information
-    -Added boot time to general information
-    -Added uptime to general information
-    -Added user information to general infoormation
-    -Added libc version on Linux systems to Python Information
-    -Collection of CPU times is now 10x faster
-    -Formatted date and time per locale
-    -Invalid memory type now raises InvalidMemType(memtype)
-    -Added shebang
-    -Added write start and end times
-    
-    2.0a
-    -Initial commit
 
   [1]: http://www.python.org/download/releases/3.3.3/
   [2]: http://code.google.com/p/psutil/

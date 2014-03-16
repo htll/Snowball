@@ -8,8 +8,8 @@ statistics and process information.
 
 ### Using Snowball ###
 
-> **Note:** Code examples are written for Ubuntu Linux and may not work with 
-other operating systems
+> **Note:** Code examples are written for Debian-based Linux distros and may not 
+work with other operating systems
 
 Before beginning, make sure all dependencies are met, or Snowball will not run. 
 See the *Dependency Information* section for more information. To run Snowball, 
@@ -37,7 +37,7 @@ have [Python 3.3][1] or newer. Then, install [psutil][2] 1.2.1. It's recommended
 that you install psutil using [pip][3] to ensure that psutil will be installed 
 correctly.
 
-**Ubuntu:**
+**Debian/Ubuntu:**
 To install Python 3.3, run
 
     sudo apt-get install python3
